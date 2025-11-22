@@ -10,8 +10,8 @@ class DatabaseHelper {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    // Veritabanı ismini değiştirdim ki sıfırdan temiz kurulum yapsın
-    _database = await _initDB('roadto_final_v1.db');
+    // Versiyonu v7 yaptık ki tertemiz bir başlangıç olsun
+    _database = await _initDB('roadto_final_v7.db');
     return _database!;
   }
 
@@ -22,9 +22,10 @@ class DatabaseHelper {
   }
 
   Future _createDB(Database db, int version) async {
+    // Mekanlar Tablosu
     await db.execute('''
     CREATE TABLE places (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id INTEGER PRIMARY KEY, 
       title TEXT,
       description TEXT,
       location TEXT,
@@ -34,56 +35,42 @@ class DatabaseHelper {
       isLiked INTEGER
     )
     ''');
-
-    // --- BAŞLANGIÇ VERİLERİ (Seed Data) ---
-    // Swift projendeki mekanları buraya koordinatlarıyla ekliyoruz
-    
-    // 1. Pamukkale
-    await db.insert('places', Place(
-      title: 'Pamukkale Travertenleri',
-      description: 'Termal sularıyla ünlü beyaz cennet.',
-      location: 'Denizli',
-      imageName: 'pamukkale.jpg', // assets/images içine bu isimle resim koymalısın
-      latitude: 37.9251,
-      longitude: 29.1263,
-      isLiked: 1,
-    ).toMap());
-
-    // 2. Hierapolis
-    await db.insert('places', Place(
-      title: 'Hierapolis Antik Kenti',
-      description: 'Kutsal şehir ve antik tiyatro.',
-      location: 'Denizli',
-      imageName: 'hierapolis.jpg',
-      latitude: 37.9280,
-      longitude: 29.1270,
-    ).toMap());
-
-    // 3. Laodikeia (Repoda resmini gördüm)
-    await db.insert('places', Place(
-      title: 'Laodikeia',
-      description: 'Erken Hristiyanlık kiliselerinden biri.',
-      location: 'Denizli',
-      imageName: 'leodikya.png',
-      latitude: 37.8362,
-      longitude: 29.1075,
-    ).toMap());
   }
 
-  Future<List<Place>> getPlaces() async {
+  // --- 1. FAVORİ EKLE ---
+  Future<int> insertPlace(Place place) async {
     final db = await instance.database;
-    // isLiked: 1 (Favoriler) en üstte görünsün diye sıralama ekledim
-    final result = await db.query('places', orderBy: 'isLiked DESC, title ASC');
-    return result.map((json) => Place.fromMap(json)).toList();
+    // Aynı ID varsa üzerine yazar (Günceller)
+    return await db.insert('places', place.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  Future<int> toggleFavorite(int id, int currentStatus) async {
+  // --- 2. FAVORİ SİL ---
+  Future<int> deletePlace(int id) async {
     final db = await instance.database;
-    return await db.update(
+    return await db.delete(
       'places',
-      {'isLiked': currentStatus == 1 ? 0 : 1},
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  // --- 3. FAVORİLERİ GETİR ---
+  Future<List<Place>> getPlaces() async {
+    final db = await instance.database;
+    final result = await db.query('places');
+    // Listeyi ters çeviriyoruz (En son eklenen en başta dursun)
+    List<Place> list = result.map((json) => Place.fromMap(json)).toList();
+    return list.reversed.toList();
+  }
+
+  // --- 4. KONTROL: BU MEKAN FAVORİ Mİ? ---
+  Future<bool> isFavorite(int id) async {
+    final db = await instance.database;
+    final result = await db.query(
+      'places',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    return result.isNotEmpty;
   }
 }

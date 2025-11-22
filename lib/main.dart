@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'place_service.dart'; // Servis dosyan
-import 'screens/place_details_screen.dart'; // <-- EĞER HATA VERİRSE DOSYA YOLUNU KONTROL ET
-import 'models/place.dart'; // <-- EĞER HATA VERİRSE DOSYA YOLUNU KONTROL ET
+import 'package:google_fonts/google_fonts.dart';
+import 'place_service.dart'; 
+import 'screens/place_details_screen.dart'; 
+import 'models/place.dart'; 
+import 'data/db_helper.dart'; 
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized(); 
@@ -19,6 +21,7 @@ class RoadToApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.deepPurple,
         useMaterial3: true,
+        textTheme: GoogleFonts.poppinsTextTheme(),
       ),
       home: const PlacesScreen(),
     );
@@ -33,19 +36,52 @@ class PlacesScreen extends StatefulWidget {
 }
 
 class _PlacesScreenState extends State<PlacesScreen> {
-  // Servis dosyamızı çağırıyoruz
   final PlaceService _placeService = PlaceService();
   
   List<dynamic> places = []; 
   bool isLoading = false;    
-  String statusMessage = "Kategori seçerek aramaya başla..."; 
+  String statusMessage = "Yükleniyor..."; 
 
-  // Arama Fonksiyonu
+  @override
+  void initState() {
+    super.initState();
+    // Uygulama açılır açılmaz favorileri getir
+    loadFavorites();
+  }
+
+  // FAVORİLERİ ÇEKME FONKSİYONU
+  void loadFavorites() async {
+    setState(() {
+      isLoading = true;
+      places = [];
+      statusMessage = "Favoriler yükleniyor...";
+    });
+
+    try {
+      List<Place> favs = await DatabaseHelper.instance.getPlaces();
+      
+      setState(() {
+        // Veritabanı objelerini Map'e çevirip listeye atıyoruz
+        places = favs.map((p) => p.toMap()).toList();
+        isLoading = false;
+        if (places.isEmpty) {
+          statusMessage = "Henüz hiç favori mekanınız yok.";
+        }
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+        statusMessage = "Hata: $e";
+      });
+    }
+  }
+
+  // API ARAMA FONKSİYONU
   void searchPlaces(String category) async {
     setState(() {
       isLoading = true; 
       places = [];      
-      statusMessage = "Konum alınıyor ve mekanlar aranıyor...";
+      statusMessage = "$category aranıyor...";
     });
 
     try {
@@ -59,7 +95,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
         }
       });
     } catch (e) {
-      debugPrint("Hata: $e"); // print yerine debugPrint daha iyidir
+      debugPrint("Hata: $e");
       setState(() {
         isLoading = false;
         statusMessage = "Hata oluştu: Konum iznini kontrol et.\n$e";
@@ -78,12 +114,24 @@ class _PlacesScreenState extends State<PlacesScreen> {
         children: [
           const SizedBox(height: 10),
           
-          // --- BUTONLARIN OLDUĞU KISIM ---
+          // --- BUTONLAR ---
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Row(
               children: [
+                // FAVORİLER BUTONU
+                ElevatedButton.icon(
+                  onPressed: loadFavorites, 
+                  icon: const Icon(Icons.favorite, size: 18, color: Colors.white),
+                  label: const Text("Favorilerim", style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                
                 _buildFilterButton("Restoran", "restaurant", Icons.restaurant, Colors.orange),
                 const SizedBox(width: 10),
                 _buildFilterButton("Kafe", "cafe", Icons.coffee, Colors.brown),
@@ -97,7 +145,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
           
           const Divider(),
 
-          // --- LİSTELEME KISMI ---
+          // --- LİSTELEME ---
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator()) 
@@ -106,14 +154,27 @@ class _PlacesScreenState extends State<PlacesScreen> {
                     : ListView.builder(
                         itemCount: places.length,
                         itemBuilder: (context, index) {
-                          var place = places[index];
+                          var item = places[index];
                           
-                          // İsim ve koordinat verilerini güvenli şekilde alıyoruz
-                          var tags = place['tags'] ?? {};
-                          var name = tags['name'] ?? "İsimsiz Mekan";
-                          
-                          var lat = place['lat'] ?? place['center']?['lat'] ?? 0.0;
-                          var lon = place['lon'] ?? place['center']?['lon'] ?? 0.0;
+                          // VERİ AYRIŞTIRMA (API vs DB Farkı)
+                          String name = "İsimsiz";
+                          double lat = 0.0;
+                          double lon = 0.0;
+                          int? id;
+
+                          if (item.containsKey('tags')) { 
+                            // API VERİSİ (tags içinde gelir)
+                            name = item['tags']['name'] ?? "İsimsiz Mekan";
+                            lat = item['lat'] ?? item['center']?['lat'] ?? 0.0;
+                            lon = item['lon'] ?? item['center']?['lon'] ?? 0.0;
+                            id = item['id'];
+                          } else {
+                            // DB VERİSİ (direkt gelir)
+                            name = item['title'];
+                            lat = item['latitude'];
+                            lon = item['longitude'];
+                            id = item['id'];
+                          }
 
                           return Card(
                             margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -121,40 +182,36 @@ class _PlacesScreenState extends State<PlacesScreen> {
                             child: ListTile(
                               leading: const Icon(Icons.location_on, color: Colors.red),
                               title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: Text("Detaylar için tıkla"), // Kullanıcıyı yönlendiriyoruz
+                              subtitle: Text("Lat: $lat\nLon: $lon"), // Koordinatı gösterir (Debug için iyi)
                               trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                              isThreeLine: false, 
-
-                              // --- TIKLAMA ÖZELLİĞİ EKLENDİ ---
-                              onTap: () {
+                              
+                              onTap: () async {
                                 if (lat != 0.0 && lon != 0.0) {
-                                  
-                                  // 1. API Verisini Place Modeline Çeviriyoruz
-                                  Place apiPlace = Place(
-                                    id: int.tryParse(place['id'].toString()) ?? 0,
+                                  Place p = Place(
+                                    id: id ?? 0, 
                                     title: name,
-                                    description: "Bu mekan OpenStreetMap verileri kullanılarak bulunmuştur.",
-                                    imageName: "", // RESİM YOK, ARTIK SORUN DEĞİL
+                                    description: "Mekan detayları...", 
+                                    imageName: "", 
                                     location: "Lat: $lat, Lon: $lon",
                                     latitude: lat,
                                     longitude: lon,
-                                    isLiked: 0,
+                                    isLiked: 0, 
                                   );
 
-                                  // 2. Detay Sayfasına Yönlendiriyoruz
-                                  Navigator.push(
+                                  // Detay sayfasına git
+                                  await Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => PlaceDetailsScreen(place: apiPlace),
+                                      builder: (context) => PlaceDetailsScreen(place: p),
                                     ),
                                   );
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("Bu mekanın konum verisi eksik!")),
-                                  );
+                                  
+                                  // Eğer şu an favoriler ekranındaysak, geri dönünce listeyi yenile
+                                  if(statusMessage.contains("Favoriler") || statusMessage.contains("yok")) {
+                                     loadFavorites(); 
+                                  }
                                 }
                               },
-                              // ---------------------------------
                             ),
                           );
                         },
@@ -165,7 +222,6 @@ class _PlacesScreenState extends State<PlacesScreen> {
     );
   }
 
-  // --- YARDIMCI BUTON FONKSİYONU ---
   Widget _buildFilterButton(String label, String categoryKey, IconData icon, Color color) {
     return ElevatedButton.icon(
       onPressed: () => searchPlaces(categoryKey),
