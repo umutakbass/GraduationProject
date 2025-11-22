@@ -4,6 +4,9 @@ import 'place_service.dart';
 import 'screens/place_details_screen.dart'; 
 import 'models/place.dart'; 
 import 'data/db_helper.dart'; 
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
+
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized(); 
@@ -23,10 +26,16 @@ class RoadToApp extends StatelessWidget {
         useMaterial3: true,
         textTheme: GoogleFonts.poppinsTextTheme(),
       ),
-      home: const PlacesScreen(),
+      initialRoute: '/login',
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
+        '/home': (context) => const PlacesScreen(),
+      },
     );
   }
 }
+
 
 class PlacesScreen extends StatefulWidget {
   const PlacesScreen({super.key});
@@ -107,9 +116,18 @@ class _PlacesScreenState extends State<PlacesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("RoadTo Keşfet"),
-        backgroundColor: Colors.deepPurple.shade100,
-      ),
+  title: const Text("RoadTo Keşfet"),
+  backgroundColor: Colors.deepPurple.shade100,
+  actions: [
+    IconButton(
+      icon: const Icon(Icons.logout),
+      onPressed: () {
+        Navigator.pushReplacementNamed(context, '/login');
+      },
+    ),
+  ],
+),
+
       body: Column(
         children: [
           const SizedBox(height: 10),
