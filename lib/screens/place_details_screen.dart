@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:url_launcher/url_launcher.dart';
-
+import 'package:url_launcher/url_launcher.dart'; 
 import '../../models/place.dart';
 import '../../data/db_helper.dart';
 
@@ -18,215 +17,241 @@ class PlaceDetailsScreen extends StatefulWidget {
 
 class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
   late Place currentPlace;
-  bool isLocalFavorite = false;
+  bool isLocalFavorite = false; 
 
   @override
   void initState() {
     super.initState();
     currentPlace = widget.place;
-    _checkIfFavorite();
+    _checkIfFavorite(); // Sayfa açılınca kontrol et
   }
 
+  // Veritabanında var mı diye kontrol eder
   Future<void> _checkIfFavorite() async {
-    final db = DatabaseHelper.instance;
-    final exists = await db.isFavorite(currentPlace.id ?? -1);
-
-    setState(() {
-      isLocalFavorite = exists;
-    });
+    if (currentPlace.id != null) {
+      bool exists = await DatabaseHelper.instance.isFavorite(currentPlace.id!);
+      setState(() {
+        isLocalFavorite = exists;
+        currentPlace.isLiked = exists ? 1 : 0;
+      });
+    }
   }
 
+  // FAVORİ EKLEME / ÇIKARMA İŞLEMİ
   Future<void> _toggleFavorite() async {
-    final db = DatabaseHelper.instance;
+    if (currentPlace.id == null) return;
 
     try {
       if (isLocalFavorite) {
-        await db.deletePlace(currentPlace.id ?? -1);
+        // Zaten favoriyse -> SİL
+        await DatabaseHelper.instance.deletePlace(currentPlace.id!);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Favorilerden çıkarıldı.")));
+        }
       } else {
-        await db.insertPlace(currentPlace.copyWith(isLiked: 1));
+        // Favori değilse -> EKLE
+        currentPlace.isLiked = 1; 
+        await DatabaseHelper.instance.insertPlace(currentPlace);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Favorilere eklendi!")));
+        }
       }
 
+      // Ekranı güncelle
       setState(() {
         isLocalFavorite = !isLocalFavorite;
-        currentPlace = currentPlace.copyWith(isLiked: isLocalFavorite ? 1 : 0);
+        currentPlace.isLiked = isLocalFavorite ? 1 : 0;
       });
     } catch (e) {
-      debugPrint("Favori hatası: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Favori işlemi başarısız: $e")),
-      );
+      debugPrint('Favori hatası: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('İşlem başarısız: $e')));
+      }
+    }
+  }
+
+  // GOOGLE MAPS YÖNLENDİRME (Senin Özelliğin)
+  Future<void> _openMap() async {
+    final double lat = currentPlace.latitude;
+    final double lon = currentPlace.longitude;
+
+    // Google Maps Linki (Doğru format)
+    final Uri googleMapsUrl = Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=$lat,$lon');
+
+    try {
+      if (!await launchUrl(googleMapsUrl, mode: LaunchMode.externalApplication)) {
+        await launchUrl(googleMapsUrl, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
+      debugPrint('Harita hatası: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Harita açılamadı: $e")),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final double lat = currentPlace.latitude;
-    final double lon = currentPlace.longitude;
-
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 245, 245, 245),
-      appBar: AppBar(
-        title: Text(
-          currentPlace.title,
-          style: GoogleFonts.poppins(
-            textStyle: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(
-              isLocalFavorite ? Icons.favorite : Icons.favorite_border,
-              color: Colors.white,
-              size: 28,
-            ),
-            onPressed: _toggleFavorite,
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      body: Stack(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(18),
-            child: Image.asset(
-              currentPlace.imageName,
-              height: 240,
-              width: double.infinity,
-              fit: BoxFit.cover,
+          // 1. ARKA PLAN (Mor Tasarım)
+          Positioned(
+            top: 0, left: 0, right: 0, height: 350,
+            child: Container(
+              color: Colors.deepPurple, 
+              child: currentPlace.imageName.isNotEmpty 
+                  ? Image.asset(currentPlace.imageName, fit: BoxFit.cover) // Varsa resim
+                  : const Center(child: Icon(Icons.location_city, size: 100, color: Colors.white30)),
             ),
           ),
-
-          const SizedBox(height: 20),
-
-          Text(
-            currentPlace.title,
-            style: GoogleFonts.poppins(
-              textStyle: const TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
+          
+          // 2. GERİ BUTONU
+          Positioned(
+            top: 50, left: 20,
+            child: CircleAvatar(
+              backgroundColor: Colors.white,
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                onPressed: () => Navigator.pop(context), 
               ),
             ),
           ),
 
-          const SizedBox(height: 12),
-
-          Text(
-            currentPlace.description,
-            style: GoogleFonts.poppins(
-              textStyle: const TextStyle(
-                fontSize: 16,
-                height: 1.6,
-                color: Colors.black54,
+          // 3. İÇERİK KARTI (Slide efektli yapı)
+          Positioned(
+            top: 300, left: 0, right: 0, bottom: 0,
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
               ),
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Map preview
-          SizedBox(
-            height: 230,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: FlutterMap(
-                options: MapOptions(
-                  initialCenter: LatLng(lat, lon),
-                  initialZoom: 14,
-                ),
+              child: Column(
                 children: [
-                  TileLayer(
-                    urlTemplate:
-                        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                    subdomains: const ['a', 'b', 'c'],
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                      children: [
+                        // BAŞLIK VE KALP BUTONU
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                currentPlace.title,
+                                style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.orangeAccent, width: 2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: IconButton(
+                                icon: Icon(
+                                  isLocalFavorite ? Icons.favorite : Icons.favorite_border,
+                                  color: isLocalFavorite ? Colors.red : Colors.black54,
+                                  size: 30,
+                                ),
+                                onPressed: _toggleFavorite,
+                              ),
+                            )
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            const Icon(Icons.location_pin, color: Colors.deepPurple, size: 16),
+                            const SizedBox(width: 5),
+                            Expanded(child: Text(currentPlace.location, style: const TextStyle(color: Colors.grey))),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        
+                        const Text("Hakkında", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 5),
+                        Text(currentPlace.description.isNotEmpty ? currentPlace.description : "Açıklama yok."),
+                        
+                        const SizedBox(height: 20),
+                        const Text("Konum Önizleme", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 10),
+
+                        // MİNİ HARİTA (Senin kodun buraya gömüldü)
+                        Container(
+                          height: 200,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(15),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: FlutterMap(
+                            options: MapOptions(
+                              initialCenter: LatLng(currentPlace.latitude, currentPlace.longitude),
+                              initialZoom: 15,
+                            ),
+                            children: [
+                              TileLayer(
+                                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                userAgentPackageName: 'com.roadto.app',
+                              ),
+                              MarkerLayer(
+                                markers: [
+                                  Marker(
+                                    point: LatLng(currentPlace.latitude, currentPlace.longitude),
+                                    width: 60, height: 60,
+                                    child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
                   ),
-                  MarkerLayer(
-                    markers: [
-                      Marker(
-                        width: 40,
-                        height: 40,
-                        point: LatLng(lat, lon),
-                        child: const Icon(
-                          Icons.location_pin,
-                          size: 36,
-                          color: Colors.red,
+
+                  // YOL TARİFİ BUTONU (En altta sabit)
+                  Container(
+                    padding: const EdgeInsets.all(0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: const Border(top: BorderSide(color: Colors.grey, width: 0.5)),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), offset: const Offset(0, -4), blurRadius: 10)]
+                    ),
+                    child: SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 55,
+                          child: ElevatedButton.icon(
+                            onPressed: _openMap, // Google Maps'i açar
+                            icon: const Icon(Icons.directions, color: Colors.white),
+                            label: const Text(
+                              "Yol Tarifi Al (Google Maps)",
+                              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                              elevation: 4,
+                            ),
+                          ),
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),
             ),
           ),
-
-          const SizedBox(height: 30),
-
-          // Google Maps Route Button
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
-            child: SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton.icon(
-                onPressed: _openMap,
-                icon: const Icon(Icons.directions, color: Colors.white),
-                label: const Text(
-                  "Yol Tarifi Al",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
-  }
-
-  // ---------------------------------------------------
-  // GOOGLE MAPS’A ROTA AÇAN FONKSİYON (FINAL)
-  // ---------------------------------------------------
-  Future<void> _openMap() async {
-    final double lat = currentPlace.latitude;
-    final double lon = currentPlace.longitude;
-
-    final Uri googleMapsUrl = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&destination=$lat,$lon&travelmode=driving',
-    );
-
-    try {
-      if (!await launchUrl(
-        googleMapsUrl,
-        mode: LaunchMode.externalApplication,
-      )) {
-        await launchUrl(
-          googleMapsUrl,
-          mode: LaunchMode.platformDefault,
-        );
-      }
-    } catch (e) {
-      debugPrint('Harita açma hatası: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Google Haritalar açılamadı: $e")),
-        );
-      }
-    }
   }
 }

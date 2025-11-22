@@ -19,6 +19,7 @@ class Place {
     this.isLiked = 0,
   });
 
+  // SENİN EKLEDİĞİN KOPYALAMA FONKSİYONU (Bunu koruyoruz)
   Place copyWith({
     int? id,
     String? title,
@@ -40,7 +41,6 @@ class Place {
       isLiked: isLiked ?? this.isLiked,
     );
   }
-
 
   // Veritabanından okumak için
   factory Place.fromMap(Map<String, dynamic> json) => Place(

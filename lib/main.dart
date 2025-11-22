@@ -4,6 +4,8 @@ import 'place_service.dart';
 import 'screens/place_details_screen.dart'; 
 import 'models/place.dart'; 
 import 'data/db_helper.dart'; 
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized(); 
@@ -23,7 +25,14 @@ class RoadToApp extends StatelessWidget {
         useMaterial3: true,
         textTheme: GoogleFonts.poppinsTextTheme(),
       ),
-      home: const PlacesScreen(),
+      // BURASI BİRLEŞTİRİLDİ:
+      // Uygulama Login ile başlayacak, giriş yapılınca '/home' yani senin sayfana gidecek.
+      initialRoute: '/login',
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
+        '/home': (context) => const PlacesScreen(),
+      },
     );
   }
 }
@@ -109,6 +118,15 @@ class _PlacesScreenState extends State<PlacesScreen> {
       appBar: AppBar(
         title: const Text("RoadTo Keşfet"),
         backgroundColor: Colors.deepPurple.shade100,
+        // BURASI BİRLEŞTİRİLDİ: Arkadaşının logout butonu eklendi.
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              Navigator.pushReplacementNamed(context, '/login');
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -208,7 +226,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
                                   
                                   // Eğer şu an favoriler ekranındaysak, geri dönünce listeyi yenile
                                   if(statusMessage.contains("Favoriler") || statusMessage.contains("yok")) {
-                                     loadFavorites(); 
+                                      loadFavorites(); 
                                   }
                                 }
                               },

@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/place.dart';
+import '../models/user.dart'; // Arkadaşının modeli eklendi
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -10,19 +11,37 @@ class DatabaseHelper {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    // Versiyonu v7 yaptık ki tertemiz bir başlangıç olsun
-    _database = await _initDB('roadto_final_v7.db');
+    // Veritabanı ismini ortak bir isim yapıyoruz
+    _database = await _initDB('roadto_app_final.db');
     return _database!;
   }
 
   Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
-    return await openDatabase(path, version: 1, onCreate: _createDB);
+
+    return await openDatabase(
+      path,
+      version: 2, // Versiyon 2: Hem Places hem Users var
+      onCreate: _createDB,
+      onUpgrade: (db, oldVersion, newVersion) async {
+        // Eğer eski versiyon varsa ve users tablosu yoksa ekle
+        if (oldVersion < 2) {
+          await db.execute('''
+          CREATE TABLE users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            email TEXT UNIQUE,
+            password TEXT
+          )
+          ''');
+        }
+      },
+    );
   }
 
   Future _createDB(Database db, int version) async {
-    // Mekanlar Tablosu
+    // 1. Tablo: Mekanlar (Senin kodun)
     await db.execute('''
     CREATE TABLE places (
       id INTEGER PRIMARY KEY, 
@@ -35,16 +54,25 @@ class DatabaseHelper {
       isLiked INTEGER
     )
     ''');
+
+    // 2. Tablo: Kullanıcılar (Arkadaşının kodu)
+    await db.execute('''
+    CREATE TABLE users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT,
+      email TEXT UNIQUE,
+      password TEXT
+    )
+    ''');
   }
 
-  // --- 1. FAVORİ EKLE ---
+  // --- MEKAN İŞLEMLERİ (SENİN KISIM) ---
+
   Future<int> insertPlace(Place place) async {
     final db = await instance.database;
-    // Aynı ID varsa üzerine yazar (Günceller)
     return await db.insert('places', place.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  // --- 2. FAVORİ SİL ---
   Future<int> deletePlace(int id) async {
     final db = await instance.database;
     return await db.delete(
@@ -54,16 +82,13 @@ class DatabaseHelper {
     );
   }
 
-  // --- 3. FAVORİLERİ GETİR ---
   Future<List<Place>> getPlaces() async {
     final db = await instance.database;
     final result = await db.query('places');
-    // Listeyi ters çeviriyoruz (En son eklenen en başta dursun)
     List<Place> list = result.map((json) => Place.fromMap(json)).toList();
     return list.reversed.toList();
   }
 
-  // --- 4. KONTROL: BU MEKAN FAVORİ Mİ? ---
   Future<bool> isFavorite(int id) async {
     final db = await instance.database;
     final result = await db.query(
@@ -72,5 +97,30 @@ class DatabaseHelper {
       whereArgs: [id],
     );
     return result.isNotEmpty;
+  }
+
+  // --- KULLANICI İŞLEMLERİ (ARKADAŞININ KISMI) ---
+
+  Future<int> insertUser(AppUser user) async {
+    final db = await instance.database;
+    return await db.insert(
+      'users',
+      user.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.abort,
+    );
+  }
+
+  Future<AppUser?> getUserByEmailAndPassword(String email, String password) async {
+    final db = await instance.database;
+    final result = await db.query(
+      'users',
+      where: 'email = ? AND password = ?',
+      whereArgs: [email, password],
+    );
+
+    if (result.isNotEmpty) {
+      return AppUser.fromMap(result.first);
+    }
+    return null;
   }
 }
