@@ -1,7 +1,8 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/place.dart';
-import '../models/user.dart'; // Arkadaşının modeli eklendi
+import '../models/user.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -11,8 +12,8 @@ class DatabaseHelper {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    // Veritabanı ismini ortak bir isim yapıyoruz
-    _database = await _initDB('roadto_app_final.db');
+    // Veritabanı adını değiştirdik ki sıfırdan kurulsun (v6)
+    _database = await _initDB('roadto_final_v6.db'); 
     return _database!;
   }
 
@@ -22,40 +23,28 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2, // Versiyon 2: Hem Places hem Users var
+      version: 1,
       onCreate: _createDB,
-      onUpgrade: (db, oldVersion, newVersion) async {
-        // Eğer eski versiyon varsa ve users tablosu yoksa ekle
-        if (oldVersion < 2) {
-          await db.execute('''
-          CREATE TABLE users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
-            email TEXT UNIQUE,
-            password TEXT
-          )
-          ''');
-        }
-      },
     );
   }
 
   Future _createDB(Database db, int version) async {
-    // 1. Tablo: Mekanlar (Senin kodun)
     await db.execute('''
     CREATE TABLE places (
       id INTEGER PRIMARY KEY, 
+      userId INTEGER, 
       title TEXT,
       description TEXT,
       location TEXT,
       imageName TEXT,
       latitude REAL,
       longitude REAL,
-      isLiked INTEGER
+      isLiked INTEGER,
+      isVisited INTEGER,
+      userNote TEXT
     )
     ''');
 
-    // 2. Tablo: Kullanıcılar (Arkadaşının kodu)
     await db.execute('''
     CREATE TABLE users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,61 +55,78 @@ class DatabaseHelper {
     ''');
   }
 
-  // --- MEKAN İŞLEMLERİ (SENİN KISIM) ---
+  Future<int?> _getCurrentUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('currentUserId');
+  }
 
+  // --- MEKAN İŞLEMLERİ ---
   Future<int> insertPlace(Place place) async {
     final db = await instance.database;
-    return await db.insert('places', place.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+    final userId = await _getCurrentUserId();
+    final newPlace = place.copyWith(userId: userId);
+    return await db.insert('places', newPlace.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  Future<int> deletePlace(int id) async {
+  Future<int> deletePlace(int placeId) async {
     final db = await instance.database;
-    return await db.delete(
-      'places',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    final userId = await _getCurrentUserId();
+    return await db.delete('places', where: 'id = ? AND userId = ?', whereArgs: [placeId, userId]);
   }
 
-  Future<List<Place>> getPlaces() async {
+  Future<List<Place>> getPlaces() async { 
     final db = await instance.database;
-    final result = await db.query('places');
-    List<Place> list = result.map((json) => Place.fromMap(json)).toList();
-    return list.reversed.toList();
+    final userId = await _getCurrentUserId();
+    if (userId == null) return [];
+    final result = await db.query('places', where: 'userId = ? AND isLiked = 1', whereArgs: [userId]);
+    return result.map((json) => Place.fromMap(json)).toList().reversed.toList();
   }
 
-  Future<bool> isFavorite(int id) async {
+  Future<List<Place>> getVisitedPlaces() async { 
     final db = await instance.database;
-    final result = await db.query(
-      'places',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-    return result.isNotEmpty;
+    final userId = await _getCurrentUserId();
+    if (userId == null) return [];
+    final result = await db.query('places', where: 'userId = ? AND isVisited = 1', whereArgs: [userId]);
+    return result.map((json) => Place.fromMap(json)).toList().reversed.toList();
   }
 
-  // --- KULLANICI İŞLEMLERİ (ARKADAŞININ KISMI) ---
+  Future<bool> isFavorite(int placeId) async {
+    final db = await instance.database;
+    final userId = await _getCurrentUserId();
+    if (userId == null) return false;
+    final result = await db.query('places', where: 'id = ? AND userId = ?', whereArgs: [placeId, userId]);
+    if (result.isNotEmpty) return result.first['isLiked'] == 1;
+    return false;
+  }
 
+  Future<bool> isVisited(int placeId) async {
+    final db = await instance.database;
+    final userId = await _getCurrentUserId();
+    if (userId == null) return false;
+    final result = await db.query('places', where: 'id = ? AND userId = ?', whereArgs: [placeId, userId]);
+    if (result.isNotEmpty) return result.first['isVisited'] == 1;
+    return false;
+  }
+
+  Future<String?> getNote(int placeId) async {
+    final db = await instance.database;
+    final userId = await _getCurrentUserId();
+    if (userId == null) return null;
+    final result = await db.query('places', where: 'id = ? AND userId = ?', whereArgs: [placeId, userId]);
+    if (result.isNotEmpty) return result.first['userNote'] as String?;
+    return null;
+  }
+
+  // --- KULLANICI İŞLEMLERİ ---
   Future<int> insertUser(AppUser user) async {
     final db = await instance.database;
-    return await db.insert(
-      'users',
-      user.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.abort,
-    );
+    return await db.insert('users', user.toMap(), conflictAlgorithm: ConflictAlgorithm.abort);
   }
 
   Future<AppUser?> getUserByEmailAndPassword(String email, String password) async {
     final db = await instance.database;
-    final result = await db.query(
-      'users',
-      where: 'email = ? AND password = ?',
-      whereArgs: [email, password],
-    );
-
-    if (result.isNotEmpty) {
-      return AppUser.fromMap(result.first);
-    }
+    final result = await db.query('users', where: 'email = ? AND password = ?', whereArgs: [email, password]);
+    if (result.isNotEmpty) return AppUser.fromMap(result.first);
     return null;
   }
 }

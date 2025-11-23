@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../data/db_helper.dart';
 import '../models/user.dart';
 
@@ -10,56 +11,37 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _passwordAgainController = TextEditingController();
 
-  bool _isLoading = false;
-  String? _errorMessage;
+  void _register() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
 
-  Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    if (_passwordController.text.trim() !=
-        _passwordAgainController.text.trim()) {
-      setState(() {
-        _errorMessage = 'Şifreler uyuşmuyor';
-      });
+    if (name.isEmpty || email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tüm alanları doldurun.')),
+      );
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
     try {
-      final db = DatabaseHelper.instance;
-
-      final user = AppUser(
-        name: _nameController.text.trim(),
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-
-      await db.insertUser(user);
-
-      if (!mounted) return;
-
-      // Kayıt başarılı → giriş ekranına
-      Navigator.pushReplacementNamed(context, '/login');
-    } catch (e) {
-      setState(() {
-        _errorMessage =
-            'Kayıt yapılamadı. Bu e-posta zaten kayıtlı olabilir.\nHata: $e';
-      });
-    } finally {
+      final newUser = AppUser(name: name, email: email, password: password);
+      await DatabaseHelper.instance.insertUser(newUser);
+      
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Kayıt başarılı! Giriş yapabilirsiniz.'), backgroundColor: Colors.green),
+        );
+        Navigator.pop(context); // Giriş ekranına dön
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Bu e-posta zaten kayıtlı veya bir hata oluştu.'), backgroundColor: Colors.red),
+        );
       }
     }
   }
@@ -68,99 +50,58 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Üye Ol'),
+        title: const Text("Kayıt Ol"),
+        backgroundColor: const Color(0xFF0D47A1),
+        foregroundColor: Colors.white,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (_errorMessage != null) ...[
-                  Text(
-                    _errorMessage!,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Ad Soyad',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Ad soyad girin';
-                    }
-                    return null;
-                  },
+        padding: const EdgeInsets.all(24.0),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
+              TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: "Ad Soyad",
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.person),
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'E-posta',
-                    border: OutlineInputBorder(),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: "E-posta",
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.email),
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: "Şifre",
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.lock),
+                ),
+              ),
+              const SizedBox(height: 30),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _register,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0D47A1),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'E-posta girin';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Geçerli bir e-posta girin';
-                    }
-                    return null;
-                  },
+                  child: const Text("Kayıt Ol", style: TextStyle(color: Colors.white, fontSize: 16)),
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Şifre',
-                    border: OutlineInputBorder(),
-                  ),
-                  obscureText: true,
-                  validator: (value) {
-                    if (value == null || value.length < 4) {
-                      return 'Şifre en az 4 karakter olmalı';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _passwordAgainController,
-                  decoration: const InputDecoration(
-                    labelText: 'Şifre Tekrar',
-                    border: OutlineInputBorder(),
-                  ),
-                  obscureText: true,
-                  validator: (value) {
-                    if (value == null || value.length < 4) {
-                      return 'Şifre tekrarı en az 4 karakter olmalı';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
-                _isLoading
-                    ? const CircularProgressIndicator()
-                    : ElevatedButton(
-                        onPressed: _register,
-                        child: const Text('Üye Ol'),
-                      ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pushReplacementNamed(context, '/login');
-                  },
-                  child: const Text('Zaten hesabın var mı? Giriş yap'),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
