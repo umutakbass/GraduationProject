@@ -1,0 +1,38 @@
+name: gp_project
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  path: ^1.8.1
+  http: ^1.1.0
+  
+  # --- HARİTA DEĞİŞİKLİĞİ ---
+  # flutter_map ve latlong2 SİLİNDİ.
+  # Yerine Google Maps eklendi:
+  google_maps_flutter: ^2.10.0
+  # ---------------------------
+
+  url_launcher: ^6.2.1
+  geolocator: ^10.1.0
+  google_fonts: ^6.1.0
+  shared_preferences: ^2.2.2
+  share_plus: ^7.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/

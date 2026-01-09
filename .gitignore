@@ -1,0 +1,59 @@
+﻿# Flutter/Dart
+
+# Dart and Flutter tooling
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Build outputs
+/build/
+**/build/
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Generated.xcconfig
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+# Android
+local.properties
+.gradle/
+**/local.properties
+
+# IntelliJ / Android Studio
+*.iml
+.idea/
+*.ipr
+*.iws
+
+# VS Code
+.vscode/
+
+# Generated files
+**/generated/**
+
+# Pub cache (optional - usually not committed)
+.pub-cache/
+
+# Coverage and reports
+/coverage/
+/reports/
+
+# Misc
+*.log
+*.lock
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Optional environment files
+.env
+
+# Keep other misc file types ignored
+*.class
+*.pyc
+*.swp
+
+# End of file

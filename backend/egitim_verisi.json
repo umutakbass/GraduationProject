@@ -1,0 +1,134 @@
+[
+  {
+    "text": "Sabah güzel bir serpme kahvaltı yapmak istiyorum.",
+    "intent": "rota_olustur",
+    "entities": [
+      { "value": "serpme kahvaltı", "category": "kahvaltı" }
+    ]
+  },
+  {
+    "text": "Önce kahvaltı yapıp sonra Hierapolis antik kentini gezmek istiyorum.",
+    "intent": "rota_olustur",
+    "entities": [
+      { "value": "kahvaltı", "category": "kahvaltı" },
+      { "value": "Hierapolis", "category": "tarih" }
+    ]
+  },
+  {
+    "text": "Canım çok fena Denizli kebabı çekti, nerede yenir?",
+    "intent": "mekan_bul",
+    "entities": [
+      { "value": "Denizli kebabı", "category": "yemek" }
+    ]
+  },
+  {
+    "text": "Pamukkale travertenlerini görmek ve sonra otele geçmek istiyorum.",
+    "intent": "rota_olustur",
+    "entities": [
+      { "value": "Pamukkale", "category": "gezi" },
+      { "value": "otel", "category": "otel" }
+    ]
+  },
+  {
+    "text": "Meşhur Zafer gazozu nerede içilir?",
+    "intent": "mekan_bul",
+    "entities": [
+      { "value": "Zafer gazozu", "category": "gazoz" }
+    ]
+  },
+  {
+    "text": "Tarihi yerleri gezip akşam da iskender yemek istiyorum.",
+    "intent": "rota_olustur",
+    "entities": [
+      { "value": "tarihi", "category": "tarih" },
+      { "value": "iskender", "category": "yemek" }
+    ]
+  },
+  {
+    "text": "Konaklama için uygun bir yer var mı?",
+    "intent": "mekan_bul",
+    "entities": [
+      { "value": "konaklama", "category": "otel" }
+    ]
+  },
+  {
+    "text": "Laodikeia antik kentine gitmek istiyorum.",
+    "intent": "mekan_bul",
+    "entities": [
+      { "value": "Laodikeia", "category": "tarih" }
+    ]
+  },
+  {
+    "text": "Karnım aç, güzel bir tandır kebabı yemek lazım.",
+    "intent": "mekan_bul",
+    "entities": [
+      { "value": "tandır", "category": "yemek" }
+    ]
+  },
+  {
+    "text": "Kahvaltı, sonra müze, en son da otel.",
+    "intent": "rota_olustur",
+    "entities": [
+      { "value": "kahvaltı", "category": "kahvaltı" },
+      { "value": "müze", "category": "tarih" },
+      { "value": "otel", "category": "otel" }
+    ]
+  },
+  {
+    "text": "Denizli'de gezilecek doğal yerler nereler?",
+    "intent": "mekan_bul",
+    "entities": [
+      { "value": "gezilecek", "category": "gezi" }
+    ]
+  },
+  {
+    "text": "Kuyu kebabı yapan en iyi yer neresi?",
+    "intent": "mekan_bul",
+    "entities": [
+      { "value": "kuyu kebabı", "category": "yemek" }
+    ]
+  },
+  {
+    "text": "Teleferik ile bağbaşı yaylasına çıkmak istiyorum.",
+    "intent": "mekan_bul",
+    "entities": [
+      { "value": "bağbaşı", "category": "gezi" }
+    ]
+  },
+  {
+    "text": "Termal otel arıyorum.",
+    "intent": "mekan_bul",
+    "entities": [
+      { "value": "otel", "category": "otel" }
+    ]
+  },
+  {
+    "text": "Simit ve çay ile kahvaltı yapmak istiyorum.",
+    "intent": "mekan_bul",
+    "entities": [
+      { "value": "simit", "category": "kahvaltı" }
+    ]
+  },
+  {
+    "text": "Acıktım, yemek yemek istiyorum.",
+    "intent": "mekan_bul",
+    "entities": [
+      { "value": "yemek", "category": "yemek" }
+    ]
+  },
+  {
+    "text": "Tripolis antik kentini merak ediyorum.",
+    "intent": "mekan_bul",
+    "entities": [
+      { "value": "Tripolis", "category": "tarih" }
+    ]
+  },
+  {
+    "text": "Önce tarihi yerler sonra yemek.",
+    "intent": "rota_olustur",
+    "entities": [
+      { "value": "tarihi", "category": "tarih" },
+      { "value": "yemek", "category": "yemek" }
+    ]
+  }
+]
