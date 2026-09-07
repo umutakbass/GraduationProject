@@ -1,11 +1,7 @@
 import mysql.connector
+import config
 
-db_config = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'Esra123*', 
-    'database': 'gezintoo_db'
-}
+db_config = config.DB_CONFIG
 
 def fix_database():
     try:

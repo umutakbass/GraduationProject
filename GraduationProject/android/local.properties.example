@@ -1,0 +1,12 @@
+# Android yerel ayarlari - SABLON
+#
+# local.properties dosyasi .gitignore'dadir ve Flutter tarafindan
+# otomatik uretilir (sdk.dir / flutter.sdk satirlari). Asagidaki satiri
+# o dosyaya elle ekleyin; build.gradle.kts anahtari oradan okur ve
+# AndroidManifest.xml icindeki ${MAPS_API_KEY} yerine koyar.
+#
+# Onerilen kisitlama (console.cloud.google.com -> Credentials):
+#   Application restriction = Android apps (paket adi + SHA-1)
+#   API restriction        = Maps SDK for Android
+
+MAPS_API_KEY=

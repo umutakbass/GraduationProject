@@ -1,12 +1,8 @@
 import mysql.connector
+import config
 from werkzeug.security import generate_password_hash
 
-db_config = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'Esra123*', 
-    'database': 'gezintoo_db'
-}
+db_config = config.DB_CONFIG
 
 def create_connection():
     try:

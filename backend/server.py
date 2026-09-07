@@ -1,6 +1,7 @@
 from waitress import serve
 from flask import Flask, request, jsonify
 import mysql.connector
+import config
 from werkzeug.security import generate_password_hash, check_password_hash
 import math
 import requests
@@ -16,16 +17,11 @@ except:
 
 app = Flask(__name__)
 
-GOOGLE_API_KEY = "AIzaSyCAmwE0p9cB27MJEu-D5ykalk7VEpfLWp8"
+GOOGLE_API_KEY = config.GOOGLE_API_KEY
 START_LAT = 37.7765
 START_LON = 29.0864
 
-db_config = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'Esra123*',
-    'database': 'gezintoo_db'
-}
+db_config = config.DB_CONFIG
 
 def get_db_connection():
     try:
