@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../api_service.dart'; // API servisini çağır
-import 'register_screen.dart'; // Kayıt ekranına gitmek için
-import 'home_screen.dart'; // DÜZELTME: Mekanların olduğu ana ekranı (PlacesScreen) çağırıyoruz
+import '../api_service.dart';
+import 'register_screen.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,9 +14,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   
-  // Servisimizi tanımlıyoruz
   final ApiService _apiService = ApiService();
-  bool _isLoading = false; // Yükleniyor göstergesi için değişken
+  bool _isLoading = false;
 
   void _login() async {
     final email = _emailController.text.trim();
@@ -30,28 +29,24 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     setState(() {
-      _isLoading = true; // Yükleniyor başlat
+      _isLoading = true;
     });
 
     try {
-      // API'ye giriş isteği gönderiyoruz
       final result = await _apiService.login(email, password);
 
       if (!mounted) return;
 
       setState(() {
-        _isLoading = false; // Yükleniyor bitir
+        _isLoading = false;
       });
 
       if (result['success'] == true) {
-        // --- GİRİŞ BAŞARILI ---
-        // DÜZELTİLDİ: Artık Chat ekranına değil, Mekanlar (PlacesScreen) ekranına gidiyor.
         Navigator.pushReplacement(
           context, 
           MaterialPageRoute(builder: (context) => const HomeScreen())
         );
       } else {
-        // --- GİRİŞ HATALI ---
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result['message'] ?? 'Hatalı e-posta veya şifre.'), 
@@ -111,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 30),
               
               _isLoading 
-                ? const CircularProgressIndicator() // Yüklenirken dönen çember
+                ? const CircularProgressIndicator()
                 : SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -128,7 +123,6 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 15),
               TextButton(
                 onPressed: () {
-                  // Kayıt ekranına git
                   Navigator.push(
                     context, 
                     MaterialPageRoute(builder: (context) => const RegisterScreen())

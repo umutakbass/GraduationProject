@@ -1,11 +1,10 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart'; // debugPrint için
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'models/place.dart';
 
 class ApiService {
-  // ⚠️ Emülatör: 10.0.2.2 | Gerçek Telefon: Bilgisayarın yerel IP'si
   final String baseUrl = "http://10.0.2.2:5000"; 
 
   Map<String, String> get _headers => {
@@ -13,7 +12,6 @@ class ApiService {
     "Accept": "application/json",
   };
 
-  // ===================== 1. CHAT =====================
   Future<Map<String, dynamic>> sendMessage(String message) async {
     try {
       final res = await http.post(
@@ -46,7 +44,6 @@ class ApiService {
     }
   }
 
-  // ===================== 2. MEKAN DETAY =====================
   Future<Map<String, dynamic>> getPlaceDetails(String placeId, int userId) async {
     try {
       final res = await http.post(
@@ -60,7 +57,6 @@ class ApiService {
     }
   }
 
-  // ===================== 3. ETKİLEŞİM =====================
   Future<Map<String, dynamic>> toggleInteraction({
     required int userId,
     required String type,
@@ -96,7 +92,6 @@ class ApiService {
     }
   }
 
-  // ===================== 4. AUTH =====================
   Future<Map<String, dynamic>> register(String name, String email, String pass) async {
     final res = await http.post(
       Uri.parse('$baseUrl/register'),
@@ -122,7 +117,6 @@ class ApiService {
     return data;
   }
 
-  // ===================== 5. USER PLACES =====================
   Future<List<Place>> getUserPlaces() async {
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getInt('currentUserId');
@@ -143,7 +137,6 @@ class ApiService {
     return [];
   }
 
-  // ===================== 🔥 PROFİL (LEVEL / OYUN) =====================
   Future<Map<String, dynamic>> getUserProfile() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -161,7 +154,6 @@ class ApiService {
     }
   }
 
-  // ===================== 6. BİLDİRİMLER =====================
   Future<List<dynamic>> getNotifications() async {
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getInt('currentUserId');
@@ -180,7 +172,6 @@ class ApiService {
     return [];
   }
 
-  // ===================== 7. PROFİL GÜNCELLE =====================
   Future<Map<String, dynamic>> updateProfileSettings(
       int userId, String email, String password) async {
     final res = await http.post(

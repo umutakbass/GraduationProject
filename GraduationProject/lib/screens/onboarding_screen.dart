@@ -31,13 +31,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     },
   ];
 
-  // Tanıtım bittiğinde çalışır
   Future<void> _finishOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('seenOnboarding', true); // "Gördüm" diye işaretle
+    await prefs.setBool('seenOnboarding', true);
     
     if (mounted) {
-      // Direkt giriş ekranına at
       Navigator.pushReplacementNamed(context, '/login');
     }
   }
@@ -45,7 +43,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D47A1), // Koyu Mavi Tema
+      backgroundColor: const Color(0xFF0D47A1),
       body: SafeArea(
         child: Column(
           children: [
@@ -60,7 +58,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // İkon Alanı
                         Container(
                           padding: const EdgeInsets.all(30),
                           decoration: BoxDecoration(
@@ -74,7 +71,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           ),
                         ),
                         const SizedBox(height: 40),
-                        // Başlık
                         Text(
                           contents[index]["title"],
                           style: GoogleFonts.poppins(
@@ -85,7 +81,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 20),
-                        // Açıklama
                         Text(
                           contents[index]["desc"],
                           style: GoogleFonts.poppins(
@@ -101,13 +96,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
             
-            // Alt Kontrol Paneli (Noktalar ve Buton)
             Padding(
               padding: const EdgeInsets.only(bottom: 50, left: 20, right: 20),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Sayfa Noktaları
                   Row(
                     children: List.generate(
                       contents.length,
@@ -124,7 +117,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                   ),
                   
-                  // İleri / Başla Butonu
                   ElevatedButton(
                     onPressed: () {
                       if (_currentPage == contents.length - 1) {

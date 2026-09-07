@@ -14,7 +14,6 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final ApiService _apiService = ApiService();
 
-  // Form kontrolcüleri
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -23,7 +22,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool isLoading = false;
   bool isStatsLoading = true;
 
-  // Oyun verileri
   String levelName = "Çaylak";
   String progressText = "0/5 Gezgin olmaya";
   int visitedCount = 0;
@@ -65,13 +63,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
     } catch (_) {
-      // sessiz geç
     } finally {
       if (mounted) setState(() => isStatsLoading = false);
     }
   }
 
-  // ---------- UI helpers ----------
   String _levelEmoji(String lvl) {
     final l = lvl.toLowerCase();
     if (l.contains("çaylak")) return "🐣";
@@ -82,7 +78,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   IconData _badgeIcon(String iconName, {required bool unlocked}) {
-    // Backend ikon adları: flag / walk / map / mountain (senin server.py)
     switch (iconName) {
       case "flag":
         return Icons.flag;
@@ -97,7 +92,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // progressText: "2/5 Kaşif olmaya" gibi
   double _progressValueFromText(String text) {
     if (text.toLowerCase().contains("maksimum")) return 1.0;
     final match = RegExp(r'(\d+)\s*/\s*(\d+)').firstMatch(text);
@@ -109,7 +103,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   String _motivationalText() {
-    // Oyunsu kısa motivasyon cümlesi
     final t = progressText.toLowerCase();
     if (t.contains("maksimum")) return "👑 Zirvedesin! Yeni hedefler belirle.";
     if (t.contains("gezgin olmaya")) return "🔥 Başlıyoruz! Birkaç yer daha, Gezgin oluyorsun.";
@@ -217,7 +210,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ---------- actions ----------
   Future<void> _updateProfile() async {
     if (_emailController.text.isEmpty && _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -267,7 +259,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // ---------- build ----------
   @override
   Widget build(BuildContext context) {
     final progressValue = _progressValueFromText(progressText);
@@ -302,7 +293,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ===================== HERO (LEVEL) =====================
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
@@ -329,7 +319,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     : Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // üst satır: hoşgeldin + küçük chip
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -366,7 +355,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           const SizedBox(height: 14),
 
-                          // büyük rozet
                           Center(
                             child: Container(
                               width: 92,
@@ -411,7 +399,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           const SizedBox(height: 14),
 
-                          // progress text
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -448,7 +435,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               const SizedBox(height: 22),
 
-              // ===================== ACHIEVEMENTS =====================
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -465,7 +451,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 10),
 
-              // 2x2 grid
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -558,7 +543,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
 
-                          // kilit overlay
                           if (!unlocked)
                             Positioned.fill(
                               child: Container(
@@ -577,7 +561,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               const SizedBox(height: 22),
 
-              // ===================== SETTINGS (COLLAPSIBLE) =====================
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey.shade50,
@@ -652,7 +635,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               const SizedBox(height: 18),
 
-              // küçük ipucu
               Center(
                 child: Text(
                   "İpucu: Ekranı aşağı çek → profil verilerini yenile",

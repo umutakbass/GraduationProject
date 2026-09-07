@@ -17,7 +17,6 @@ class PlaceDetailsScreen extends StatefulWidget {
 class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
   final ApiService _apiService = ApiService();
   
-  // Durum değişkenleri
   bool isLiked = false;
   bool isVisited = false;
   
@@ -31,7 +30,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    // 1. Başlangıçta gelen veriyi (Home'dan veya Favorilerden) kabul et
     isLiked = widget.place.isLiked == 1;
     isVisited = widget.place.isVisited == 1;
     googleRating = widget.place.rating;
@@ -47,38 +45,30 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
     });
 
     if (currentUserId != null) {
-      // Paralel olarak iki işlemi de başlatıyoruz
       Future.wait([
-        _fetchPlaceDetails(),       // Detayları (Yorum, Puan) çek
-        _checkUserInteractions()    // GARANTİ YÖNTEMİ: Favorileri kontrol et
+        _fetchPlaceDetails(),
+        _checkUserInteractions()
       ]);
     } else {
-      // Kullanıcı giriş yapmamışsa sadece detayları çek
       _fetchPlaceDetails();
     }
   }
 
-  // --- GARANTİ YÖNTEMİ: LİSTE KONTROLÜ ---
   Future<void> _checkUserInteractions() async {
     try {
-      // Kullanıcının tüm etkileşimlerini (favori/gezildi) çekiyoruz
       final userPlaces = await _apiService.getUserPlaces();
       
-      // Bu mekan (widget.place) listede var mı diye bakıyoruz
-      // Hem title hem googlePlaceId kontrolü yapıyoruz ki kaçırma olmasın
       final match = userPlaces.firstWhere(
         (p) => (p.googlePlaceId == widget.place.googlePlaceId) || 
                (p.title == widget.place.title),
         orElse: () => Place(
           title: "", description: "", location: "", 
           latitude: 0, longitude: 0, category: "", imagePath: ""
-        ), // Boş obje (match yoksa)
+        ),
       );
 
-      // Eğer eşleşme bulunduysa ve başlığı doluysa (boş obje değilse)
       if (match.title.isNotEmpty && mounted) {
         setState(() {
-          // Backend'den gelen kesin bilgiyi ekrana bas
           if (match.isLiked == 1) isLiked = true;
           if (match.isVisited == 1) isVisited = true;
         });
@@ -111,10 +101,8 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
               googleRating = (data['details']['rating'] as num).toDouble();
             }
             
-            // Eğer detay servisi de status dönüyorsa onu da değerlendir (Yedek kontrol)
             if (data['user_status'] != null) {
               final status = data['user_status'];
-              // isLiked zaten true ise (garanti yönteminden geldiyse) dokunma, değilse buraya bak
               if (!isLiked) isLiked = (status['is_liked'] == true || status['is_liked'] == 1);
               if (!isVisited) isVisited = (status['is_visited'] == true || status['is_visited'] == 1);
             }
@@ -128,7 +116,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
     }
   }
 
-  // --- HARİTA MARKER ---
   void _createMarker() {
     setState(() {
       _markers.add(
@@ -142,7 +129,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
     });
   }
 
-  // --- HARİTA AÇMA ---
   Future<void> _openExternalMap() async {
     final googleUrl = Uri.parse("http://googleusercontent.com/maps.google.com/maps?daddr=${widget.place.latitude},${widget.place.longitude}");
     try {
@@ -154,18 +140,15 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
     }
   }
 
-  // --- ETKİLEŞİM (FAVORİ/GEZİLDİ) ---
   Future<void> _toggleInteraction(String type) async {
     bool previousStatus = (type == 'favorite') ? isLiked : isVisited;
     bool newStatus = !previousStatus;
     
-    // 1. Ekranda anında güncelle (Optimistic UI)
     setState(() {
       if (type == 'favorite') isLiked = newStatus;
       else isVisited = newStatus;
     });
 
-    // 2. Sunucuya gönder
     final response = await _apiService.toggleInteraction(
       userId: currentUserId ?? 1,
       type: type,
@@ -174,7 +157,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
       rating: googleRating
     );
 
-    // 3. Başarılı ise bildirim kontrolü, başarısız ise geri al
     if (response['success'] == true) {
       if (type == 'visited' && newStatus == true && response['gamification'] != null) {
         _showGamificationSnackBar(response['gamification']);
@@ -229,7 +211,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // RESİM ALANI
           Container(
             height: 300,
             width: double.infinity,
@@ -239,7 +220,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                 : const Icon(Icons.location_city, size: 100, color: Colors.white),
           ),
           
-          // GERİ BUTONU
           Positioned(
             top: 40,
             left: 16,
@@ -252,7 +232,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
             ),
           ),
 
-          // KAYDIRILABİLİR İÇERİK
           DraggableScrollableSheet(
             initialChildSize: 0.65,
             minChildSize: 0.65,
@@ -268,7 +247,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                 child: ListView(
                   controller: scrollController,
                   children: [
-                    // GRİ ÇUBUK
                     Center(
                       child: Container(
                         width: 50,
@@ -278,7 +256,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                       ),
                     ),
 
-                    // BAŞLIK VE FAVORİ BUTONU
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -293,14 +270,13 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                           onPressed: () => _toggleInteraction('favorite'),
                           icon: Icon(
                             isLiked ? Icons.favorite : Icons.favorite_border,
-                            color: isLiked ? Colors.red : Colors.grey, // Renk Değişimi
+                            color: isLiked ? Colors.red : Colors.grey,
                             size: 32,
                           ),
                         ),
                       ],
                     ),
 
-                    // PUAN VE KATEGORİ
                     Row(
                       children: [
                         Container(
@@ -323,7 +299,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                     ),
                     
                     const SizedBox(height: 10),
-                    // KONUM
                     Text(
                       widget.place.location,
                       style: GoogleFonts.poppins(color: Colors.grey[600], fontSize: 14),
@@ -331,7 +306,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                     
                     const SizedBox(height: 20),
 
-                    // BUTONLAR: YOL TARİFİ & GEZİLDİ
                     Row(
                       children: [
                         Expanded(
@@ -376,7 +350,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
 
                     const SizedBox(height: 25),
                     
-                    // HARİTA ÖNİZLEME
                     Container(
                       height: 200,
                       decoration: BoxDecoration(
@@ -401,7 +374,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
 
                     const SizedBox(height: 25),
                     
-                    // AÇIKLAMA
                     Text("Hakkında", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     Text(
@@ -411,7 +383,6 @@ class _PlaceDetailsScreenState extends State<PlaceDetailsScreen> {
                     
                     const SizedBox(height: 25),
 
-                    // YORUMLAR
                     Text("Kullanıcı Yorumları", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 10),
 

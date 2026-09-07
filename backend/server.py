@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from waitress import serve
 from flask import Flask, request, jsonify
 import mysql.connector
@@ -8,9 +7,8 @@ import requests
 import string
 import sys
 import json
-import re  # ✅ EKLENDİ (intent sırası + doğru eşleşme için)
+import re
 
-# Türkçe karakter ve konsol ayarı
 try:
     sys.stdout.reconfigure(encoding='utf-8')
 except:
@@ -18,12 +16,10 @@ except:
 
 app = Flask(__name__)
 
-# ===================== AYARLAR =====================
 GOOGLE_API_KEY = "AIzaSyCAmwE0p9cB27MJEu-D5ykalk7VEpfLWp8"
 START_LAT = 37.7765
 START_LON = 29.0864
 
-# MySQL Ayarları
 db_config = {
     'host': 'localhost',
     'user': 'root',
@@ -45,7 +41,6 @@ def safe_print(text):
     except:
         pass
 
-# ===================== 1. BÖLÜM: YARDIMCI FONKSİYONLAR =====================
 
 def normalize_turkish(text):
     """Metinleri eşleştirmek için tertemiz hale getirir (küçük harf, türkçe karakter yok)"""
@@ -145,7 +140,6 @@ def get_google_travel_times(lat1, lon1, lat2, lon2):
         url = "https://maps.googleapis.com/maps/api/directions/json"
         result = {"drive": "Bilinmiyor", "walk": "Bilinmiyor"}
 
-        # 🚗 ARABA
         params_drive = {
             "origin": f"{lat1},{lon1}",
             "destination": f"{lat2},{lon2}",
@@ -157,7 +151,6 @@ def get_google_travel_times(lat1, lon1, lat2, lon2):
         if r_drive.get("status") == "OK":
             result["drive"] = r_drive["routes"][0]["legs"][0]["duration"]["text"]
 
-        # 🚶 YÜRÜME
         params_walk = {
             "origin": f"{lat1},{lon1}",
             "destination": f"{lat2},{lon2}",
@@ -174,7 +167,6 @@ def get_google_travel_times(lat1, lon1, lat2, lon2):
         return {"drive": "Bilinmiyor", "walk": "Bilinmiyor"}
 
 
-# ===================== ✅ INTENT (SIRA + KAHVE FIX) =====================
 
 def analyze_flow_intent(user_query):
     """
@@ -186,7 +178,6 @@ def analyze_flow_intent(user_query):
         normalized_query = normalize_turkish(user_query)
 
         mappings = [
-            # 🥐 KAHVALTI
             {
                 "root": "kahvalt",
                 "keyword": "Kahvaltı",
@@ -195,7 +186,6 @@ def analyze_flow_intent(user_query):
                 "display_name": "Kahvaltı"
             },
 
-            # ☕ KAHVE / KAFE
             {
                 "root": "kahv",
                 "keyword": "Kahve",
@@ -218,7 +208,6 @@ def analyze_flow_intent(user_query):
                 "display_name": "Kahve"
             },
 
-            # 🍽️ YEMEK
             {
                 "root": "ogle",
                 "keyword": "Yemek",
@@ -241,7 +230,6 @@ def analyze_flow_intent(user_query):
                 "display_name": "Yemek"
             },
 
-            # 🏨 OTEL
             {
                 "root": "otel",
                 "keyword": "Otel",
@@ -250,7 +238,6 @@ def analyze_flow_intent(user_query):
                 "display_name": "Otel"
             },
 
-            # 🏛️ TARİHİ
             {
                 "root": "tarih",
                 "keyword": "Tarihi Yer",
@@ -273,7 +260,6 @@ def analyze_flow_intent(user_query):
                 "display_name": "Gezi"
             },
 
-            # 🛍️ AVM
             {
                 "root": "avm",
                 "keyword": "Alışveriş",
@@ -284,7 +270,6 @@ def analyze_flow_intent(user_query):
         ]
 
         def first_index_for_root(root: str) -> int:
-            # ✅ kahv kahvaltıdan eşleşmesin:
             if root == "kahv":
                 pattern = r"\bkahv(?!alt)"
             else:
@@ -307,7 +292,7 @@ def analyze_flow_intent(user_query):
             if mapping["display_name"] in seen:
                 continue
             step = mapping.copy()
-            step["step_order"] = step_no  # ✅ sıra burada kilitleniyor
+            step["step_order"] = step_no
             detected_flow.append(step)
             seen.add(mapping["display_name"])
             step_no += 1
@@ -319,7 +304,6 @@ def analyze_flow_intent(user_query):
         return []
 
 
-# ===================== 2. BÖLÜM: AUTH & DB =====================
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -377,7 +361,6 @@ def login():
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
-# ===================== 3. BÖLÜM: ETKİLEŞİM =====================
 
 @app.route('/add_interaction', methods=['POST'])
 def add_interaction():
@@ -385,7 +368,7 @@ def add_interaction():
         data = request.json
         user_id = data.get('user_id') or 1
         place = data.get('place') if data.get('place') else data
-        i_type = data.get('type')  # favorite / visited
+        i_type = data.get('type')
         status = data.get('status')
 
         g_place_id = place.get('google_place_id') or place.get('googlePlaceId')
@@ -564,7 +547,6 @@ def get_notifications():
     except:
         return jsonify({"success": False, "notifications": []})
 
-# ===================== 4. BÖLÜM: CHAT & ROTA =====================
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -598,7 +580,6 @@ def chat():
     current_ref_lon = START_LON
     global_place_id = 1
 
-    # ✅ enumerate geri geldi ama step_order artık intent’ten geliyor
     for index, step in enumerate(flow_steps):
         step_no = step.get("step_order", index + 1)
 
@@ -648,7 +629,7 @@ def chat():
                     "imagePath": image_url,
                     "rating": float(place.get('rating', 0.0)),
                     "distance": 0,
-                   "step_order": step_no,  # ✅ SIRA ARTIK BOZULMAZ
+                   "step_order": step_no,
                     "is_recommended": False,
                     "isRecommended": False,
                     "google_place_id": g_id,
@@ -681,7 +662,6 @@ def chat():
             p_copy['title'] = f"[{stage['step_title'].split(': ')[1]}] {place['title']}"
             all_places_flattened.append(p_copy)
 
-    # ✅ Flat liste de sırayı korusun (UI karışmasın)
     all_places_flattened.sort(key=lambda x: x.get("step_order", 0))
 
     step_names = [stage['step_title'].split(": ")[1] for stage in timeline_stages] if timeline_stages else []
@@ -704,7 +684,6 @@ def create_route():
         if not selected_places:
             return jsonify({"success": False, "message": "Mekan yok."})
 
-        # 1️⃣ OLAY SIRASI
         selected_places.sort(key=lambda x: x.get('step_order', 0))
 
         groups = {}
@@ -715,7 +694,6 @@ def create_route():
         final_route = []
         current_lat, current_lon = START_LAT, START_LON
 
-        # 2️⃣ YAKINLIK OPTİMİZASYONU
         for step in sorted_steps:
             optimized, end_lat, end_lon = sort_group_internally(
                 groups[step], current_lat, current_lon
@@ -723,7 +701,6 @@ def create_route():
             final_route.extend(optimized)
             current_lat, current_lon = end_lat, end_lon
 
-        # 3️⃣ SÜRE HESAPLAMA (🚗 + 🚶)
         summary_lines = []
         prev_lat, prev_lon = START_LAT, START_LON
 
@@ -750,7 +727,6 @@ def create_route():
             prev_lat = place['latitude']
             prev_lon = place['longitude']
 
-        # 4️⃣ GOOGLE MAPS LİNK
         waypoints = [f"{p['latitude']},{p['longitude']}" for p in final_route]
         maps_url = (
             f"https://www.google.com/maps/dir/?api=1"

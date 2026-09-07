@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:url_launcher/url_launcher.dart'; // PAKET EKLENDİ
+import 'package:url_launcher/url_launcher.dart';
 import '../api_service.dart';
 import '../models/place.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,7 +21,6 @@ class _ChatTestScreenState extends State<ChatTestScreen> {
   final ScrollController _scrollController = ScrollController();
   final ApiService _apiService = ApiService();
 
-  // --- YENİ MANTIK DEĞİŞKENLERİ ---
   List<dynamic> _allStages = []; 
   int _currentStageIndex = 0;    
 
@@ -33,7 +32,6 @@ class _ChatTestScreenState extends State<ChatTestScreen> {
   bool _isLoading = false;
   String _currentStepTitle = "";
 
-  // 1. MESAJ GÖNDERME
   Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
 
@@ -76,7 +74,6 @@ class _ChatTestScreenState extends State<ChatTestScreen> {
     _currentStageIndex = 0;
   }
 
-  // MEKANLARI ADIMLARA GÖRE GRUPLA
   void _groupPlacesByStep(List<Place> places) {
     places.sort((a, b) => a.stepOrder.compareTo(b.stepOrder));
     
@@ -97,7 +94,6 @@ class _ChatTestScreenState extends State<ChatTestScreen> {
     }
   }
 
-  // ADIMI BAŞLAT
   void _startStage(int index) {
     setState(() {
       _currentStageIndex = index;
@@ -123,7 +119,6 @@ class _ChatTestScreenState extends State<ChatTestScreen> {
     });
   }
 
-  // İLERLE BUTONU
   void _nextStep() {
     if (_tempSelectedPlaces.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Lütfen en az bir yer seçin!")));
@@ -143,7 +138,6 @@ class _ChatTestScreenState extends State<ChatTestScreen> {
     }
   }
 
-  // --- ROTA OLUŞTURMA VE BUTON EKLEME ---
   Future<void> _createFinalRoute() async {
     setState(() {
       _isSelectionMode = false;
@@ -172,11 +166,10 @@ class _ChatTestScreenState extends State<ChatTestScreen> {
       setState(() {
         _isLoading = false;
         if (data['success'] == true) {
-           // BURADA LİNKİ GİZLİ ALANA EKLİYORUZ
            _messages.add({
              "text": "${data['response']}", 
              "isUser": false,
-             "mapUrl": data['google_maps_url'] // URL Burada saklı
+             "mapUrl": data['google_maps_url']
            });
         } else {
            _messages.add({"text": "Rota oluşturulamadı.", "isUser": false});
@@ -189,7 +182,6 @@ class _ChatTestScreenState extends State<ChatTestScreen> {
     }
   }
 
-  // --- HARİTAYI AÇAN FONKSİYON ---
   Future<void> _launchMaps(String url) async {
     final Uri uri = Uri.parse(url);
     try {
@@ -224,7 +216,6 @@ class _ChatTestScreenState extends State<ChatTestScreen> {
               itemCount: _messages.length,
               itemBuilder: (context, index) {
                 final msg = _messages[index];
-                // Mesajda mapUrl var mı kontrol et
                 final hasUrl = msg.containsKey('mapUrl') && msg['mapUrl'] != null && msg['mapUrl'] != "";
                 
                 return Align(
@@ -232,7 +223,6 @@ class _ChatTestScreenState extends State<ChatTestScreen> {
                   child: Column(
                     crossAxisAlignment: msg['isUser'] ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                     children: [
-                      // Mesaj Balonu
                       Container(
                         margin: const EdgeInsets.symmetric(vertical: 4),
                         padding: const EdgeInsets.all(12),
@@ -243,7 +233,6 @@ class _ChatTestScreenState extends State<ChatTestScreen> {
                         child: Text(msg['text'], style: TextStyle(color: msg['isUser'] ? Colors.white : Colors.black)),
                       ),
                       
-                      // --- URL VARSA BUTON GÖSTER ---
                       if (hasUrl)
                         Padding(
                           padding: const EdgeInsets.only(top: 8, bottom: 12),
@@ -267,7 +256,6 @@ class _ChatTestScreenState extends State<ChatTestScreen> {
           
           if (_isLoading) const LinearProgressIndicator(),
 
-          // ADIM ADIM SEÇİM EKRANI
           if (_isSelectionMode)
             Container(
               height: 340,
@@ -298,7 +286,6 @@ class _ChatTestScreenState extends State<ChatTestScreen> {
                     ),
                   ),
                   
-                  // MEKAN LİSTESİ
                   Expanded(
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
@@ -363,7 +350,6 @@ class _ChatTestScreenState extends State<ChatTestScreen> {
               ),
             ),
 
-          // MESAJ GİRİŞ ALANI
           Container(
             padding: const EdgeInsets.all(8.0),
             color: Colors.white,

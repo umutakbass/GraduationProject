@@ -10,24 +10,21 @@ db_config = {
 def fix_database():
     try:
         print("🔧 Veritabanı onarımı başlatılıyor...")
-        # buffered=True diyerek bu hatayı engelliyoruz
         conn = mysql.connector.connect(buffered=True, **db_config)
         cursor = conn.cursor()
 
-        # 1. 'rating' sütununu kontrol et
         try:
             cursor.execute("SELECT rating FROM places LIMIT 1")
-            cursor.fetchall() # Cevabı okuyup temizliyoruz
+            cursor.fetchall()
             print("✅ 'rating' sütunu zaten var.")
         except:
             print("⚠️ 'rating' sütunu bulunamadı, ekleniyor...")
             cursor.execute("ALTER TABLE places ADD COLUMN rating DOUBLE DEFAULT 0.0")
             print("✅ 'rating' eklendi.")
 
-        # 2. 'google_place_id' sütununu kontrol et
         try:
             cursor.execute("SELECT google_place_id FROM places LIMIT 1")
-            cursor.fetchall() # Cevabı okuyup temizliyoruz
+            cursor.fetchall()
             print("✅ 'google_place_id' sütunu zaten var.")
         except:
             print("⚠️ 'google_place_id' sütunu bulunamadı, ekleniyor...")

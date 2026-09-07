@@ -1,7 +1,6 @@
 import mysql.connector
-from werkzeug.security import generate_password_hash # <--- BU EKLENDİ
+from werkzeug.security import generate_password_hash
 
-# --- VERİTABANI AYARLARI ---
 db_config = {
     'host': 'localhost',
     'user': 'root',
@@ -18,7 +17,6 @@ def create_connection():
         return None
 
 def create_tables(cursor):
-    # Kullanıcılar Tablosu
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -28,7 +26,6 @@ def create_tables(cursor):
     )
     """)
 
-    # Mekanlar Tablosu
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS places (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -55,13 +52,11 @@ def insert_dummy_data():
     cursor = conn.cursor()
     create_tables(cursor)
 
-    # 1. ÖNCE TEST KULLANICISI EKLE (Yoksa)
     cursor.execute("SELECT id FROM users WHERE email = 'test@gmail.com'")
     user = cursor.fetchone()
     
     user_id = 1
     if not user:
-        # --- KRİTİK DÜZELTME: ŞİFREYİ HASHLEYEREK KAYDEDİYORUZ ---
         hashed_pw = generate_password_hash("123456") 
         
         sql_user = "INSERT INTO users (name, email, password) VALUES (%s, %s, %s)"
@@ -72,7 +67,6 @@ def insert_dummy_data():
         user_id = user[0]
         print(f"👤 Test kullanıcısı zaten var (ID: {user_id})")
 
-    # 2. DENİZLİ MEKAN LİSTESİ
     places_data = [
         ("Kebapçı Enver", "Denizli'nin en meşhur tandır kebabı.", "Bayramyeri", 37.7728, 29.0875, "yemek"),
         ("Hierapolis Antik Kenti", "UNESCO Dünya Mirası listesindeki antik kent.", "Pamukkale", 37.9256, 29.1250, "tarih"),
@@ -91,7 +85,6 @@ def insert_dummy_data():
         ("Colossae Thermal", "Beş yıldızlı termal otel deneyimi.", "Karahayıt", 37.9500, 29.1200, "otel"),
     ]
 
-    # 3. VERİLERİ EKLE
     print("⏳ Mekanlar ekleniyor...")
     count = 0
     for place in places_data:

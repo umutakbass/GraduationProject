@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../api_service.dart'; // API Servisini çağırıyoruz
+import '../api_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -13,7 +13,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   
-  // API Servisinden bir nesne oluşturuyoruz
   final ApiService _apiService = ApiService();
 
   void _register() async {
@@ -21,7 +20,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
-    // 1. Boş alan kontrolü
     if (name.isEmpty || email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Lütfen tüm alanları doldurun.')),
@@ -30,22 +28,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     try {
-      // 2. MySQL'e kayıt isteği gönder (Artık DatabaseHelper yok!)
       final result = await _apiService.register(name, email, password);
 
-      if (!mounted) return; // Ekran kapandıysa işlem yapma
+      if (!mounted) return;
 
       if (result['success'] == true) {
-        // --- BAŞARILI ---
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Kayıt Başarılı! Giriş yapabilirsiniz.'), 
             backgroundColor: Colors.green
           ),
         );
-        Navigator.pop(context); // Giriş ekranına geri dön
+        Navigator.pop(context);
       } else {
-        // --- HATA (Örn: Email zaten var) ---
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result['message'] ?? 'Kayıt başarısız.'), 
@@ -54,7 +49,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
       }
     } catch (e) {
-      // --- BAĞLANTI HATASI ---
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Hata oluştu: $e'), backgroundColor: Colors.red),

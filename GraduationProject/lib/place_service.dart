@@ -11,7 +11,6 @@ class PlaceService {
         "Accept": "application/json",
       };
 
-  // 🌍 NORMAL KATEGORİLER (Yemek / Otel / Tarihi)
   Future<List<Place>> fetchPlacesFromOSM(String category) async {
     try {
       final response = await http.post(
@@ -35,7 +34,6 @@ class PlaceService {
     return [];
   }
 
-  // ⭐ FAVORİLER & ✔️ GEZDİKLERİM (SADECE USER DATA)
   Future<List<Place>> getUserPlacesByType(String type) async {
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getInt('currentUserId');
@@ -47,7 +45,7 @@ class PlaceService {
         headers: _headers,
         body: jsonEncode({
           "user_id": userId,
-          "type": type, // favorite / visited
+          "type": type,
         }),
       );
 
